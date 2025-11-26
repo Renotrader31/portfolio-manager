@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1a2234;
+      --bg-card: #151d2e;
+      --border: #2a3548;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-green: #10b981;
+      --accent-green-dim: rgba(16, 185, 129, 0.15);
+      --accent-red: #ef4444;
+      --accent-red-dim: rgba(239, 68, 68, 0.15);
+      --accent-blue: #3b82f6;
+      --accent-blue-dim: rgba(59, 130, 246, 0.15);
+      --accent-yellow: #f59e0b;
+      --accent-yellow-dim: rgba(245, 158, 11, 0.15);
+      --accent-purple: #8b5cf6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card);
+    }
+
+    .btn-success {
+      background: var(--accent-green);
+      color: white;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .summary-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .summary-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .summary-value.positive { color: var(--accent-green); }
+    .summary-value.negative { color: var(--accent-red); }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+
+    .tab {
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      background: var(--accent-blue-dim);
+      color: var(--accent-blue);
+    }
+
+    .positions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .positions-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      position: sticky;
+      top: 0;
+    }
+
+    .positions-table th.right,
+    .positions-table td.right {
+      text-align: right;
+    }
+
+    .positions-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .positions-table tr:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .symbol {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    .asset-type {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .asset-type.stock {
+      background: var(--accent-blue-dim);
+      color: var(--accent-blue);
+    }
+
+    .asset-type.option {
+      background: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--accent-purple);
+    }
+
+    .asset-type.multi-leg {
+      background: var(--accent-yellow-dim);
+      color: var(--accent-yellow);
+    }
+
+    .position-type {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .position-type.long {
+      background: var(--accent-green-dim);
+      color: var(--accent-green);
+    }
+
+    .position-type.short {
+      background: var(--accent-red-dim);
+      color: var(--accent-red);
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .positive { color: var(--accent-green); }
+    .negative { color: var(--accent-red); }
+
+    .option-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .option-details span {
+      margin-right: 12px;
+    }
+
+    .api-config {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    .api-config .input-group {
+      flex: 1;
+    }
+
+    .api-config label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .api-config input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+    }
+
+    .api-config input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .status-badge.connected {
+      background: var(--accent-green-dim);
+      color: var(--accent-green);
+    }
+
+    .status-badge.disconnected {
+      background: var(--accent-red-dim);
+      color: var(--accent-red);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .broker-tag {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      margin-left: 8px;
+    }
+
+    .refresh-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      display: none;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal .form-group {
+      margin-bottom: 16px;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .modal input, .modal select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">📊</div>
+        Portfolio Manager
+      </div>
+      <div class="header-actions">
+        <span class="refresh-time" id="refreshTime">Last updated: --</span>
+        <button class="btn btn-secondary" onclick="app.refreshPrices()">🔄 Refresh Prices</button>
+        <button class="btn btn-primary" onclick="app.showAddTradeModal()">+ Add Position</button>
+        <button class="btn btn-secondary" onclick="app.exportData()">📥 Export</button>
+      </div>
+    </header>
+
+    <div class="api-config">
+      <div class="input-group">
+        <label>Polygon API Key</label>
+        <input type="password" id="apiKey" placeholder="Enter your Polygon.io API key">
+      </div>
+      <button class="btn btn-primary" onclick="app.saveApiKey()">Save Key</button>
+      <div id="apiStatus">
+        <span class="status-badge disconnected">
+          <span class="status-dot"></span>
+          Not Connected
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total Market Value</div>
+        <div class="summary-value" id="totalValue">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total Cost Basis</div>
+        <div class="summary-value" id="totalCost">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Unrealized P&L</div>
+        <div class="summary-value" id="totalPnL">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Day Change</div>
+        <div class="summary-value" id="dayChange">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Open Positions</div>
+        <div class="summary-value" id="positionCount">0</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="app.setFilter('all')">All Accounts</button>
+      <button class="tab" onclick="app.setFilter('fidelity')">Fidelity</button>
+      <button class="tab" onclick="app.setFilter('tda')">Think or Swim</button>
+      <button class="tab" onclick="app.setFilter('wedbush')">Wedbush</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="positions-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th>Position</th>
+            <th>Details</th>
+            <th class="right">Qty</th>
+            <th class="right">Entry Price</th>
+            <th class="right">Current Price</th>
+            <th class="right">Market Value</th>
+            <th class="right">P&L</th>
+            <th class="right">P&L %</th>
+          </tr>
+        </thead>
+        <tbody id="positionsTable">
+          <tr>
+            <td colspan="10" class="loading">
+              <div class="spinner"></div>
+              Loading positions...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Trade Modal -->
+  <div class="modal-overlay" id="addTradeModal">
+    <div class="modal">
+      <h2>➕ Add Position</h2>
+      <div class="form-group">
+        <label>Account</label>
+        <select id="tradeAccount">
+          <option value="fidelity">Fidelity</option>
+          <option value="tda">Think or Swim</option>
+          <option value="wedbush">Wedbush</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Symbol</label>
+        <input type="text" id="tradeSymbol" placeholder="AAPL">
+      </div>
+      <div class="form-group">
+        <label>Asset Type</label>
+        <select id="tradeAssetType" onchange="app.toggleOptionFields()">
+          <option value="stock">Stock</option>
+          <option value="option">Option</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Position Type</label>
+        <select id="tradeType">
+          <option value="long">Long</option>
+          <option value="short">Short</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Shares / Contracts</label>
+        <input type="number" id="tradeQty" placeholder="100">
+      </div>
+      <div class="form-group">
+        <label>Entry Price / Premium</label>
+        <input type="number" step="0.01" id="tradePrice" placeholder="150.00">
+      </div>
+      <div id="optionFields" style="display: none;">
+        <div class="form-group">
+          <label>Option Type</label>
+          <select id="optionType">
+            <option value="CALL">Call</option>
+            <option value="PUT">Put</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Strike Price</label>
+          <input type="number" step="0.5" id="strikePrice" placeholder="155">
+        </div>
+        <div class="form-group">
+          <label>Expiration Date</label>
+          <input type="date" id="expirationDate">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-success" onclick="app.addTrade()">Add Position</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const app = {
+      apiKey: localStorage.getItem('portfolio-apiKey') || '',
+      portfolios: [],
+      trades: [],
+      prices: {},
+      currentFilter: 'all',
+
+      // Your existing portfolio data
+      defaultPortfolios: [
+        {"id":"all","name":"All Accounts","createdAt":"2025-11-19T17:44:41.401Z","broker":"ALL"},
+        {"id":"fidelity","name":"Fidelity","createdAt":"2025-11-19T17:44:41.401Z","broker":"FIDELITY"},
+        {"id":"tda","name":"Think or Swim","createdAt":"2025-11-19T17:44:41.401Z","broker":"TDA"},
+        {"id":"wedbush","name":"Wedbush","createdAt":"2025-11-19T17:44:41.401Z","broker":"WEDBUSH"}
+      ],
+
+      defaultTrades: [
+        {"id":"1763575758861","portfolioId":"fidelity","symbol":"ACHR","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":13.25,"shares":300},
+        {"id":"1763575775073","portfolioId":"fidelity","symbol":"AMKR","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":27.51,"shares":300},
+        {"id":"1763575816839","portfolioId":"fidelity","symbol":"AMKR","assetType":"option","type":"short","entryDate":"2025-11-14","status":"open","notes":"","optionType":"CALL","strikePrice":35,"expirationDate":"2025-11-21","premium":0.44,"contracts":3,"currentPremium":0.2},
+        {"id":"1763575833766","portfolioId":"fidelity","symbol":"ASST","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":1.72,"shares":200},
+        {"id":"1763575851669","portfolioId":"fidelity","symbol":"CORZ","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":17.77,"shares":200},
+        {"id":"1763575905060","portfolioId":"fidelity","symbol":"CORZ","assetType":"option","type":"short","entryDate":"2025-11-14","status":"open","notes":"","optionType":"CALL","strikePrice":17,"expirationDate":"2025-12-05","premium":0.49,"contracts":2,"currentPremium":0.71},
+        {"id":"1763576049930","portfolioId":"fidelity","symbol":"CRML","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":23.16,"shares":300},
+        {"id":"1763576073687","portfolioId":"fidelity","symbol":"DFH","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":31,"shares":300},
+        {"id":"1763576089962","portfolioId":"fidelity","symbol":"DOCN","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":38,"shares":200},
+        {"id":"1763576131328","portfolioId":"fidelity","symbol":"DOCN","assetType":"option","type":"short","entryDate":"2025-11-14","status":"open","notes":"","optionType":"CALL","strikePrice":50,"expirationDate":"2025-11-21","premium":1.95,"contracts":2,"currentPremium":0.3},
+        {"id":"1763576149378","portfolioId":"fidelity","symbol":"KTOS","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":86.94,"shares":400},
+        {"id":"1763576197874","portfolioId":"fidelity","symbol":"KTOS","assetType":"option","type":"short","entryDate":"2025-11-14","status":"open","notes":"","optionType":"CALL","strikePrice":78,"expirationDate":"2025-12-12","premium":2.38,"contracts":4,"currentPremium":2.7},
+        {"id":"1763576234368","portfolioId":"fidelity","symbol":"NBIS","assetType":"option","type":"short","entryDate":"2025-11-14","status":"open","notes":"","optionType":"PUT","strikePrice":100,"expirationDate":"2025-12-05","premium":10.01,"contracts":1,"currentPremium":13.1},
+        {"id":"1763576305019","portfolioId":"fidelity","symbol":"ONDS","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":10.3,"shares":200},
+        {"id":"1763576356938","portfolioId":"fidelity","symbol":"OPAD","assetType":"option","type":"long","entryDate":"2025-11-19","status":"open","notes":"","optionType":"CALL","strikePrice":7.5,"expirationDate":"2026-04-17","premium":1.46,"contracts":5,"currentPremium":0.05},
+        {"id":"1763576396636","portfolioId":"fidelity","symbol":"PPTA","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":27.5,"shares":200},
+        {"id":"1763576478739","portfolioId":"fidelity","symbol":"SOFI","assetType":"option","type":"short","entryDate":"2025-11-14","status":"open","notes":"","optionType":"PUT","strikePrice":29.5,"expirationDate":"2025-11-21","premium":1.21,"contracts":3,"currentPremium":3.8},
+        {"id":"1763576526130","portfolioId":"fidelity","symbol":"UAMY","assetType":"option","type":"long","entryDate":"2025-11-19","status":"open","notes":"","optionType":"CALL","strikePrice":20,"expirationDate":"2027-01-15","premium":3.21,"contracts":3,"currentPremium":2},
+        {"id":"1763576566945","portfolioId":"fidelity","symbol":"USAR","assetType":"option","type":"long","entryDate":"2025-11-19","status":"open","notes":"","optionType":"CALL","strikePrice":20,"expirationDate":"2027-01-15","premium":5.31,"contracts":2,"currentPremium":3},
+        {"id":"1763576580882","portfolioId":"fidelity","symbol":"UUUU","assetType":"stock","type":"long","entryDate":"2025-11-19","status":"open","notes":"","entryPrice":22.9,"shares":400},
+        {"id":"1763576625129","portfolioId":"fidelity","symbol":"UUUU","assetType":"option","type":"long","entryDate":"2025-11-14","status":"open","notes":"","optionType":"CALL","strikePrice":22,"expirationDate":"2027-01-15","premium":8.51,"contracts":3,"currentPremium":5.2},
+        {"id":"1763579264352","portfolioId":"tda","symbol":"MP","assetType":"multi-leg","type":"long","entryDate":"2025-11-19","status":"open","notes":"","strategyType":"CALL_SPREAD","legs":[{"legId":"1763579264352-0","action":"BUY","optionType":"CALL","strikePrice":65,"expirationDate":"2025-12-19","premium":0,"contracts":2},{"legId":"1763579264352-1","action":"SELL","optionType":"CALL","strikePrice":70,"expirationDate":"2025-12-19","premium":0,"contracts":2}],"netPremium":1.7},
+        {"id":"1763650348866","portfolioId":"tda","symbol":"PACS","assetType":"multi-leg","type":"long","entryDate":"2025-11-20","status":"open","notes":"","strategyType":"CALL_SPREAD","legs":[{"legId":"1763650348866-0","action":"BUY","optionType":"CALL","strikePrice":25,"expirationDate":"2025-12-19","premium":0,"contracts":2},{"legId":"1763650348866-1","action":"SELL","optionType":"CALL","strikePrice":30,"expirationDate":"2025-12-19","premium":0,"contracts":2}],"netPremium":1.98},
+        {"id":"1763740440826","portfolioId":"fidelity","symbol":"AKRR","assetType":"option","type":"long","entryDate":"2025-11-21","status":"open","notes":"","optionType":"PUT","strikePrice":65,"expirationDate":"2025-12-19","premium":1.69,"contracts":3}
+      ],
+
+      init() {
+        // Load from localStorage or use defaults
+        this.portfolios = JSON.parse(localStorage.getItem('pm-portfolios')) || this.defaultPortfolios;
+        this.trades = JSON.parse(localStorage.getItem('pm-trades')) || this.defaultTrades;
+        
+        // Load API key
+        if (this.apiKey) {
+          document.getElementById('apiKey').value = this.apiKey;
+          this.updateApiStatus(true);
+        }
+
+        this.renderTable();
+        this.updateSummary();
+      },
+
+      saveApiKey() {
+        const key = document.getElementById('apiKey').value.trim();
+        if (!key) {
+          alert('Please enter an API key');
+          return;
+        }
+        this.apiKey = key;
+        localStorage.setItem('portfolio-apiKey', key);
+        this.updateApiStatus(true);
+        alert('✅ API Key saved!');
+      },
+
+      updateApiStatus(connected) {
+        const status = document.getElementById('apiStatus');
+        if (connected) {
+          status.innerHTML = `
+            <span class="status-badge connected">
+              <span class="status-dot"></span>
+              Connected
+            </span>
+          `;
+        } else {
+          status.innerHTML = `
+            <span class="status-badge disconnected">
+              <span class="status-dot"></span>
+              Not Connected
+            </span>
+          `;
+        }
+      },
+
+      setFilter(filter) {
+        this.currentFilter = filter;
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        this.renderTable();
+        this.updateSummary();
+      },
+
+      getFilteredTrades() {
+        let filtered = this.trades.filter(t => t.status === 'open');
+        if (this.currentFilter !== 'all') {
+          filtered = filtered.filter(t => t.portfolioId === this.currentFilter);
+        }
+        return filtered;
+      },
+
+      async refreshPrices() {
+        if (!this.apiKey) {
+          alert('Please enter your Polygon API key first');
+          return;
+        }
+
+        const symbols = [...new Set(this.trades.map(t => t.symbol))];
+        
+        document.getElementById('refreshTime').textContent = 'Refreshing...';
+        
+        for (const symbol of symbols) {
+          try {
+            const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${this.apiKey}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.results && data.results[0]) {
+              this.prices[symbol] = {
+                price: data.results[0].c,
+                change: data.results[0].c - data.results[0].o,
+                changePercent: ((data.results[0].c - data.results[0].o) / data.results[0].o) * 100
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching ${symbol}:`, error);
+          }
+          
+          // Rate limiting
+          await new Promise(r => setTimeout(r, 100));
+        }
+
+        const now = new Date();
+        document.getElementById('refreshTime').textContent = `Last updated: ${now.toLocaleTimeString()}`;
+        
+        this.renderTable();
+        this.updateSummary();
+      },
+
+      renderTable() {
+        const tbody = document.getElementById('positionsTable');
+        const trades = this.getFilteredTrades();
+
+        if (trades.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="10" class="empty-state">
+                No positions found for this account.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = trades.map(trade => {
+          const priceData = this.prices[trade.symbol] || {};
+          const currentPrice = priceData.price || 0;
+          
+          let qty, entryPrice, marketValue, pnl, pnlPercent, details;
+
+          if (trade.assetType === 'stock') {
+            qty = trade.shares;
+            entryPrice = trade.entryPrice;
+            marketValue = currentPrice * qty;
+            const costBasis = entryPrice * qty;
+            pnl = trade.type === 'long' ? marketValue - costBasis : costBasis - marketValue;
+            pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+            details = `Entry: ${trade.entryDate}`;
+          } else if (trade.assetType === 'option') {
+            qty = trade.contracts;
+            entryPrice = trade.premium;
+            const currentPremium = trade.currentPremium || entryPrice;
+            marketValue = currentPremium * 100 * qty;
+            const costBasis = entryPrice * 100 * qty;
+            
+            if (trade.type === 'short') {
+              pnl = costBasis - marketValue; // Profit when premium decreases
+            } else {
+              pnl = marketValue - costBasis; // Profit when premium increases
+            }
+            pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+            details = `${trade.optionType} $${trade.strikePrice} exp ${trade.expirationDate}`;
+          } else if (trade.assetType === 'multi-leg') {
+            qty = trade.legs?.[0]?.contracts || 0;
+            entryPrice = trade.netPremium;
+            marketValue = entryPrice * 100 * qty; // Placeholder
+            pnl = 0;
+            pnlPercent = 0;
+            details = `${trade.strategyType} ${trade.legs?.map(l => `$${l.strikePrice}`).join('/')} exp ${trade.legs?.[0]?.expirationDate}`;
+          }
+
+          const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+          const broker = this.currentFilter === 'all' ? `<span class="broker-tag">${trade.portfolioId.toUpperCase()}</span>` : '';
+
+          return `
+            <tr>
+              <td>
+                <span class="symbol">${trade.symbol}</span>
+                ${broker}
+              </td>
+              <td><span class="asset-type ${trade.assetType}">${trade.assetType}</span></td>
+              <td><span class="position-type ${trade.type}">${trade.type}</span></td>
+              <td class="option-details">${details}</td>
+              <td class="right mono">${qty}</td>
+              <td class="right mono">$${entryPrice.toFixed(2)}</td>
+              <td class="right mono">${currentPrice ? '$' + currentPrice.toFixed(2) : '—'}</td>
+              <td class="right mono">${marketValue ? '$' + marketValue.toFixed(2) : '—'}</td>
+              <td class="right mono ${pnlClass}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</td>
+              <td class="right mono ${pnlClass}">${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%</td>
+            </tr>
+          `;
+        }).join('');
+      },
+
+      updateSummary() {
+        const trades = this.getFilteredTrades();
+        let totalValue = 0;
+        let totalCost = 0;
+        let dayChange = 0;
+
+        trades.forEach(trade => {
+          const priceData = this.prices[trade.symbol] || {};
+          const currentPrice = priceData.price || 0;
+
+          if (trade.assetType === 'stock') {
+            totalValue += currentPrice * trade.shares;
+            totalCost += trade.entryPrice * trade.shares;
+            dayChange += (priceData.change || 0) * trade.shares;
+          } else if (trade.assetType === 'option') {
+            const currentPremium = trade.currentPremium || trade.premium;
+            totalValue += currentPremium * 100 * trade.contracts;
+            totalCost += trade.premium * 100 * trade.contracts;
+          }
+        });
+
+        const totalPnL = totalValue - totalCost;
+
+        document.getElementById('totalValue').textContent = `$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('totalCost').textContent = `$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        
+        const pnlEl = document.getElementById('totalPnL');
+        pnlEl.textContent = `${totalPnL >= 0 ? '+' : ''}$${totalPnL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        pnlEl.className = `summary-value ${totalPnL >= 0 ? 'positive' : 'negative'}`;
+
+        const dayEl = document.getElementById('dayChange');
+        dayEl.textContent = `${dayChange >= 0 ? '+' : ''}$${dayChange.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        dayEl.className = `summary-value ${dayChange >= 0 ? 'positive' : 'negative'}`;
+
+        document.getElementById('positionCount').textContent = trades.length;
+      },
+
+      showAddTradeModal() {
+        document.getElementById('addTradeModal').classList.add('active');
+      },
+
+      closeModal() {
+        document.getElementById('addTradeModal').classList.remove('active');
+      },
+
+      toggleOptionFields() {
+        const assetType = document.getElementById('tradeAssetType').value;
+        document.getElementById('optionFields').style.display = assetType === 'option' ? 'block' : 'none';
+      },
+
+      addTrade() {
+        const assetType = document.getElementById('tradeAssetType').value;
+        const trade = {
+          id: Date.now().toString(),
+          portfolioId: document.getElementById('tradeAccount').value,
+          symbol: document.getElementById('tradeSymbol').value.toUpperCase(),
+          assetType: assetType,
+          type: document.getElementById('tradeType').value,
+          entryDate: new Date().toISOString().split('T')[0],
+          status: 'open',
+          notes: ''
+        };
+
+        if (assetType === 'stock') {
+          trade.entryPrice = parseFloat(document.getElementById('tradePrice').value);
+          trade.shares = parseInt(document.getElementById('tradeQty').value);
+        } else {
+          trade.premium = parseFloat(document.getElementById('tradePrice').value);
+          trade.contracts = parseInt(document.getElementById('tradeQty').value);
+          trade.optionType = document.getElementById('optionType').value;
+          trade.strikePrice = parseFloat(document.getElementById('strikePrice').value);
+          trade.expirationDate = document.getElementById('expirationDate').value;
+          trade.currentPremium = trade.premium;
+        }
+
+        this.trades.push(trade);
+        this.saveData();
+        this.renderTable();
+        this.updateSummary();
+        this.closeModal();
+        
+        // Clear form
+        document.getElementById('tradeSymbol').value = '';
+        document.getElementById('tradeQty').value = '';
+        document.getElementById('tradePrice').value = '';
+      },
+
+      saveData() {
+        localStorage.setItem('pm-portfolios', JSON.stringify(this.portfolios));
+        localStorage.setItem('pm-trades', JSON.stringify(this.trades));
+      },
+
+      exportData() {
+        const data = {
+          portfolios: this.portfolios,
+          trades: this.trades,
+          exportedAt: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `portfolio-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+      }
+    };
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => app.init());
+  </script>
+</body>
+</html>
