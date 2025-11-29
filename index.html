@@ -77,6 +77,7 @@
     .header-actions {
       display: flex;
       gap: 12px;
+      align-items: center;
     }
 
     .btn {
@@ -115,6 +116,38 @@
     .btn-success {
       background: var(--accent-green);
       color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-danger {
+      background: var(--accent-red);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-warning {
+      background: var(--accent-yellow);
+      color: #000;
+    }
+
+    .btn-warning:hover {
+      background: #d97706;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+    }
+
+    .btn-icon {
+      padding: 6px 8px;
+      min-width: auto;
     }
 
     .summary-grid {
@@ -234,7 +267,6 @@
     }
 
     .asset-type.option {
-      background: var(--accent-purple);
       background: rgba(139, 92, 246, 0.15);
       color: var(--accent-purple);
     }
@@ -446,11 +478,114 @@
       font-size: 0.875rem;
     }
 
+    .modal input:focus, .modal select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
     .modal-actions {
       display: flex;
       gap: 12px;
       justify-content: flex-end;
       margin-top: 24px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .position-info {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .position-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .position-info-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .position-info-label {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .position-info-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+
+    .realized-pnl {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .realized-pnl-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .realized-pnl-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .closed-trades-section {
+      margin-top: 32px;
+    }
+
+    .closed-trades-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .closed-trades-header h3 {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .toggle-closed {
+      font-size: 0.875rem;
+      color: var(--accent-blue);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .toggle-closed:hover {
+      text-decoration: underline;
+    }
+
+    .closed-table td {
+      opacity: 0.7;
+    }
+
+    .status-closed {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      text-transform: uppercase;
     }
   </style>
 </head>
@@ -497,6 +632,10 @@
         <div class="summary-value" id="totalPnL">$0.00</div>
       </div>
       <div class="summary-card">
+        <div class="summary-label">Realized P&L</div>
+        <div class="summary-value" id="realizedPnL">$0.00</div>
+      </div>
+      <div class="summary-card">
         <div class="summary-label">Day Change</div>
         <div class="summary-value" id="dayChange">$0.00</div>
       </div>
@@ -527,17 +666,47 @@
             <th class="right">Market Value</th>
             <th class="right">P&L</th>
             <th class="right">P&L %</th>
+            <th class="right">Actions</th>
           </tr>
         </thead>
         <tbody id="positionsTable">
           <tr>
-            <td colspan="10" class="loading">
+            <td colspan="11" class="loading">
               <div class="spinner"></div>
               Loading positions...
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Closed Trades Section -->
+    <div class="closed-trades-section" id="closedTradesSection" style="display: none;">
+      <div class="closed-trades-header">
+        <h3>📁 Closed Positions</h3>
+        <button class="toggle-closed" onclick="app.toggleClosedTrades()">
+          <span id="closedToggleText">Show</span>
+        </button>
+      </div>
+      <div class="table-wrapper" id="closedTradesWrapper" style="display: none;">
+        <table class="positions-table closed-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th>Position</th>
+              <th>Details</th>
+              <th class="right">Qty</th>
+              <th class="right">Entry</th>
+              <th class="right">Exit</th>
+              <th class="right">Realized P&L</th>
+              <th class="right">Close Date</th>
+            </tr>
+          </thead>
+          <tbody id="closedTradesTable">
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -597,8 +766,66 @@
         </div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-secondary" onclick="app.closeModal('addTradeModal')">Cancel</button>
         <button class="btn btn-success" onclick="app.addTrade()">Add Position</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Position Modal -->
+  <div class="modal-overlay" id="editTradeModal">
+    <div class="modal">
+      <h2>✏️ Edit Position</h2>
+      <input type="hidden" id="editTradeId">
+      <div class="position-info" id="editPositionInfo"></div>
+      <div class="form-group">
+        <label>Shares / Contracts</label>
+        <input type="number" id="editQty">
+      </div>
+      <div class="form-group">
+        <label>Entry Price / Premium</label>
+        <input type="number" step="0.01" id="editPrice">
+      </div>
+      <div class="form-group" id="editCurrentPremiumGroup" style="display: none;">
+        <label>Current Premium</label>
+        <input type="number" step="0.01" id="editCurrentPremium">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="editNotes" placeholder="Add notes...">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="app.closeModal('editTradeModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="app.saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Close Position Modal -->
+  <div class="modal-overlay" id="closeTradeModal">
+    <div class="modal">
+      <h2>🏁 Close Position</h2>
+      <input type="hidden" id="closeTradeId">
+      <div class="position-info" id="closePositionInfo"></div>
+      <div class="form-group">
+        <label>Exit Price / Premium</label>
+        <input type="number" step="0.01" id="exitPrice" placeholder="0.00" oninput="app.calculateRealizedPnL()">
+      </div>
+      <div class="form-group">
+        <label>Close Date</label>
+        <input type="date" id="closeDate">
+      </div>
+      <div class="form-group">
+        <label>Quantity to Close (leave blank for full position)</label>
+        <input type="number" id="closeQty" placeholder="Full position" oninput="app.calculateRealizedPnL()">
+      </div>
+      <div class="realized-pnl">
+        <div class="realized-pnl-label">Realized P&L</div>
+        <div class="realized-pnl-value" id="previewRealizedPnL">$0.00</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="app.closeModal('closeTradeModal')">Cancel</button>
+        <button class="btn btn-danger" onclick="app.closeTrade()">Close Position</button>
       </div>
     </div>
   </div>
@@ -610,8 +837,8 @@
       trades: [],
       prices: {},
       currentFilter: 'all',
+      showClosed: false,
 
-      // Your existing portfolio data
       defaultPortfolios: [
         {"id":"all","name":"All Accounts","createdAt":"2025-11-19T17:44:41.401Z","broker":"ALL"},
         {"id":"fidelity","name":"Fidelity","createdAt":"2025-11-19T17:44:41.401Z","broker":"FIDELITY"},
@@ -647,17 +874,19 @@
       ],
 
       init() {
-        // Load from localStorage or use defaults
         this.portfolios = JSON.parse(localStorage.getItem('pm-portfolios')) || this.defaultPortfolios;
         this.trades = JSON.parse(localStorage.getItem('pm-trades')) || this.defaultTrades;
         
-        // Load API key
         if (this.apiKey) {
           document.getElementById('apiKey').value = this.apiKey;
           this.updateApiStatus(true);
         }
 
+        // Set default close date to today
+        document.getElementById('closeDate').value = new Date().toISOString().split('T')[0];
+
         this.renderTable();
+        this.renderClosedTrades();
         this.updateSummary();
       },
 
@@ -697,11 +926,12 @@
         document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
         event.target.classList.add('active');
         this.renderTable();
+        this.renderClosedTrades();
         this.updateSummary();
       },
 
-      getFilteredTrades() {
-        let filtered = this.trades.filter(t => t.status === 'open');
+      getFilteredTrades(status = 'open') {
+        let filtered = this.trades.filter(t => t.status === status);
         if (this.currentFilter !== 'all') {
           filtered = filtered.filter(t => t.portfolioId === this.currentFilter);
         }
@@ -735,7 +965,6 @@
             console.error(`Error fetching ${symbol}:`, error);
           }
           
-          // Rate limiting
           await new Promise(r => setTimeout(r, 100));
         }
 
@@ -746,15 +975,56 @@
         this.updateSummary();
       },
 
+      getTradeDetails(trade) {
+        const priceData = this.prices[trade.symbol] || {};
+        const currentPrice = priceData.price || 0;
+        
+        let qty, entryPrice, marketValue, pnl, pnlPercent, details, costBasis;
+
+        if (trade.assetType === 'stock') {
+          qty = trade.shares;
+          entryPrice = trade.entryPrice;
+          costBasis = entryPrice * qty;
+          marketValue = currentPrice * qty;
+          pnl = trade.type === 'long' ? marketValue - costBasis : costBasis - marketValue;
+          pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+          details = `Entry: ${trade.entryDate}`;
+        } else if (trade.assetType === 'option') {
+          qty = trade.contracts;
+          entryPrice = trade.premium;
+          const currentPremium = trade.currentPremium || entryPrice;
+          costBasis = entryPrice * 100 * qty;
+          marketValue = currentPremium * 100 * qty;
+          
+          if (trade.type === 'short') {
+            pnl = costBasis - marketValue;
+          } else {
+            pnl = marketValue - costBasis;
+          }
+          pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
+          details = `${trade.optionType} $${trade.strikePrice} exp ${trade.expirationDate}`;
+        } else if (trade.assetType === 'multi-leg') {
+          qty = trade.legs?.[0]?.contracts || 0;
+          entryPrice = trade.netPremium;
+          costBasis = entryPrice * 100 * qty;
+          marketValue = costBasis;
+          pnl = 0;
+          pnlPercent = 0;
+          details = `${trade.strategyType} ${trade.legs?.map(l => `$${l.strikePrice}`).join('/')} exp ${trade.legs?.[0]?.expirationDate}`;
+        }
+
+        return { qty, entryPrice, marketValue, pnl, pnlPercent, details, costBasis, currentPrice };
+      },
+
       renderTable() {
         const tbody = document.getElementById('positionsTable');
-        const trades = this.getFilteredTrades();
+        const trades = this.getFilteredTrades('open');
 
         if (trades.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="10" class="empty-state">
-                No positions found for this account.
+              <td colspan="11" class="empty-state">
+                No open positions found for this account.
               </td>
             </tr>
           `;
@@ -762,42 +1032,7 @@
         }
 
         tbody.innerHTML = trades.map(trade => {
-          const priceData = this.prices[trade.symbol] || {};
-          const currentPrice = priceData.price || 0;
-          
-          let qty, entryPrice, marketValue, pnl, pnlPercent, details;
-
-          if (trade.assetType === 'stock') {
-            qty = trade.shares;
-            entryPrice = trade.entryPrice;
-            marketValue = currentPrice * qty;
-            const costBasis = entryPrice * qty;
-            pnl = trade.type === 'long' ? marketValue - costBasis : costBasis - marketValue;
-            pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
-            details = `Entry: ${trade.entryDate}`;
-          } else if (trade.assetType === 'option') {
-            qty = trade.contracts;
-            entryPrice = trade.premium;
-            const currentPremium = trade.currentPremium || entryPrice;
-            marketValue = currentPremium * 100 * qty;
-            const costBasis = entryPrice * 100 * qty;
-            
-            if (trade.type === 'short') {
-              pnl = costBasis - marketValue; // Profit when premium decreases
-            } else {
-              pnl = marketValue - costBasis; // Profit when premium increases
-            }
-            pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
-            details = `${trade.optionType} $${trade.strikePrice} exp ${trade.expirationDate}`;
-          } else if (trade.assetType === 'multi-leg') {
-            qty = trade.legs?.[0]?.contracts || 0;
-            entryPrice = trade.netPremium;
-            marketValue = entryPrice * 100 * qty; // Placeholder
-            pnl = 0;
-            pnlPercent = 0;
-            details = `${trade.strategyType} ${trade.legs?.map(l => `$${l.strikePrice}`).join('/')} exp ${trade.legs?.[0]?.expirationDate}`;
-          }
-
+          const { qty, entryPrice, marketValue, pnl, pnlPercent, details, currentPrice } = this.getTradeDetails(trade);
           const pnlClass = pnl >= 0 ? 'positive' : 'negative';
           const broker = this.currentFilter === 'all' ? `<span class="broker-tag">${trade.portfolioId.toUpperCase()}</span>` : '';
 
@@ -816,30 +1051,102 @@
               <td class="right mono">${marketValue ? '$' + marketValue.toFixed(2) : '—'}</td>
               <td class="right mono ${pnlClass}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</td>
               <td class="right mono ${pnlClass}">${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%</td>
+              <td class="right">
+                <div class="action-buttons">
+                  <button class="btn btn-secondary btn-icon btn-sm" onclick="app.showEditModal('${trade.id}')" title="Edit">✏️</button>
+                  <button class="btn btn-danger btn-icon btn-sm" onclick="app.showCloseModal('${trade.id}')" title="Close">🏁</button>
+                </div>
+              </td>
             </tr>
           `;
         }).join('');
       },
 
+      renderClosedTrades() {
+        const closedTrades = this.getFilteredTrades('closed');
+        const section = document.getElementById('closedTradesSection');
+        const tbody = document.getElementById('closedTradesTable');
+
+        if (closedTrades.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+
+        section.style.display = 'block';
+
+        tbody.innerHTML = closedTrades.map(trade => {
+          let qty, entryPrice, exitPrice, realizedPnL, details;
+
+          if (trade.assetType === 'stock') {
+            qty = trade.closedShares || trade.shares;
+            entryPrice = trade.entryPrice;
+            exitPrice = trade.exitPrice || 0;
+            realizedPnL = trade.realizedPnL || 0;
+            details = `Entry: ${trade.entryDate}`;
+          } else if (trade.assetType === 'option') {
+            qty = trade.closedContracts || trade.contracts;
+            entryPrice = trade.premium;
+            exitPrice = trade.exitPremium || 0;
+            realizedPnL = trade.realizedPnL || 0;
+            details = `${trade.optionType} $${trade.strikePrice} exp ${trade.expirationDate}`;
+          } else if (trade.assetType === 'multi-leg') {
+            qty = trade.legs?.[0]?.contracts || 0;
+            entryPrice = trade.netPremium;
+            exitPrice = trade.exitPremium || 0;
+            realizedPnL = trade.realizedPnL || 0;
+            details = `${trade.strategyType} ${trade.legs?.map(l => `$${l.strikePrice}`).join('/')}`;
+          }
+
+          const pnlClass = realizedPnL >= 0 ? 'positive' : 'negative';
+          const broker = this.currentFilter === 'all' ? `<span class="broker-tag">${trade.portfolioId.toUpperCase()}</span>` : '';
+
+          return `
+            <tr>
+              <td>
+                <span class="symbol">${trade.symbol}</span>
+                ${broker}
+              </td>
+              <td><span class="asset-type ${trade.assetType}">${trade.assetType}</span></td>
+              <td><span class="position-type ${trade.type}">${trade.type}</span></td>
+              <td class="option-details">${details}</td>
+              <td class="right mono">${qty}</td>
+              <td class="right mono">$${entryPrice.toFixed(2)}</td>
+              <td class="right mono">$${exitPrice.toFixed(2)}</td>
+              <td class="right mono ${pnlClass}">${realizedPnL >= 0 ? '+' : ''}$${realizedPnL.toFixed(2)}</td>
+              <td class="right mono">${trade.closeDate || '—'}</td>
+            </tr>
+          `;
+        }).join('');
+      },
+
+      toggleClosedTrades() {
+        this.showClosed = !this.showClosed;
+        document.getElementById('closedTradesWrapper').style.display = this.showClosed ? 'block' : 'none';
+        document.getElementById('closedToggleText').textContent = this.showClosed ? 'Hide' : 'Show';
+      },
+
       updateSummary() {
-        const trades = this.getFilteredTrades();
+        const trades = this.getFilteredTrades('open');
+        const closedTrades = this.getFilteredTrades('closed');
         let totalValue = 0;
         let totalCost = 0;
         let dayChange = 0;
+        let realizedPnL = 0;
 
         trades.forEach(trade => {
+          const { marketValue, costBasis } = this.getTradeDetails(trade);
           const priceData = this.prices[trade.symbol] || {};
-          const currentPrice = priceData.price || 0;
-
+          
+          totalValue += marketValue || 0;
+          totalCost += costBasis || 0;
+          
           if (trade.assetType === 'stock') {
-            totalValue += currentPrice * trade.shares;
-            totalCost += trade.entryPrice * trade.shares;
             dayChange += (priceData.change || 0) * trade.shares;
-          } else if (trade.assetType === 'option') {
-            const currentPremium = trade.currentPremium || trade.premium;
-            totalValue += currentPremium * 100 * trade.contracts;
-            totalCost += trade.premium * 100 * trade.contracts;
           }
+        });
+
+        closedTrades.forEach(trade => {
+          realizedPnL += trade.realizedPnL || 0;
         });
 
         const totalPnL = totalValue - totalCost;
@@ -850,6 +1157,10 @@
         const pnlEl = document.getElementById('totalPnL');
         pnlEl.textContent = `${totalPnL >= 0 ? '+' : ''}$${totalPnL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         pnlEl.className = `summary-value ${totalPnL >= 0 ? 'positive' : 'negative'}`;
+
+        const realizedEl = document.getElementById('realizedPnL');
+        realizedEl.textContent = `${realizedPnL >= 0 ? '+' : ''}$${realizedPnL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        realizedEl.className = `summary-value ${realizedPnL >= 0 ? 'positive' : 'negative'}`;
 
         const dayEl = document.getElementById('dayChange');
         dayEl.textContent = `${dayChange >= 0 ? '+' : ''}$${dayChange.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -862,8 +1173,153 @@
         document.getElementById('addTradeModal').classList.add('active');
       },
 
-      closeModal() {
-        document.getElementById('addTradeModal').classList.remove('active');
+      showEditModal(tradeId) {
+        const trade = this.trades.find(t => t.id === tradeId);
+        if (!trade) return;
+
+        document.getElementById('editTradeId').value = tradeId;
+        
+        // Build position info display
+        let infoHtml = `
+          <div class="position-info-row">
+            <span class="position-info-label">Symbol</span>
+            <span class="position-info-value">${trade.symbol}</span>
+          </div>
+          <div class="position-info-row">
+            <span class="position-info-label">Type</span>
+            <span class="position-info-value">${trade.assetType.toUpperCase()} - ${trade.type.toUpperCase()}</span>
+          </div>
+        `;
+
+        if (trade.assetType === 'option') {
+          infoHtml += `
+            <div class="position-info-row">
+              <span class="position-info-label">Contract</span>
+              <span class="position-info-value">${trade.optionType} $${trade.strikePrice} exp ${trade.expirationDate}</span>
+            </div>
+          `;
+        }
+
+        document.getElementById('editPositionInfo').innerHTML = infoHtml;
+
+        if (trade.assetType === 'stock') {
+          document.getElementById('editQty').value = trade.shares;
+          document.getElementById('editPrice').value = trade.entryPrice;
+          document.getElementById('editCurrentPremiumGroup').style.display = 'none';
+        } else {
+          document.getElementById('editQty').value = trade.contracts;
+          document.getElementById('editPrice').value = trade.premium;
+          document.getElementById('editCurrentPremium').value = trade.currentPremium || trade.premium;
+          document.getElementById('editCurrentPremiumGroup').style.display = 'block';
+        }
+
+        document.getElementById('editNotes').value = trade.notes || '';
+        document.getElementById('editTradeModal').classList.add('active');
+      },
+
+      showCloseModal(tradeId) {
+        const trade = this.trades.find(t => t.id === tradeId);
+        if (!trade) return;
+
+        document.getElementById('closeTradeId').value = tradeId;
+        document.getElementById('closeDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('exitPrice').value = '';
+        document.getElementById('closeQty').value = '';
+
+        // Build position info display
+        const { qty, entryPrice, pnl } = this.getTradeDetails(trade);
+        const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+
+        let infoHtml = `
+          <div class="position-info-row">
+            <span class="position-info-label">Symbol</span>
+            <span class="position-info-value">${trade.symbol}</span>
+          </div>
+          <div class="position-info-row">
+            <span class="position-info-label">Type</span>
+            <span class="position-info-value">${trade.assetType.toUpperCase()} - ${trade.type.toUpperCase()}</span>
+          </div>
+          <div class="position-info-row">
+            <span class="position-info-label">Quantity</span>
+            <span class="position-info-value">${qty} ${trade.assetType === 'stock' ? 'shares' : 'contracts'}</span>
+          </div>
+          <div class="position-info-row">
+            <span class="position-info-label">Entry Price</span>
+            <span class="position-info-value">$${entryPrice.toFixed(2)}</span>
+          </div>
+          <div class="position-info-row">
+            <span class="position-info-label">Current P&L</span>
+            <span class="position-info-value ${pnlClass}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>
+          </div>
+        `;
+
+        if (trade.assetType === 'option') {
+          infoHtml = `
+            <div class="position-info-row">
+              <span class="position-info-label">Symbol</span>
+              <span class="position-info-value">${trade.symbol}</span>
+            </div>
+            <div class="position-info-row">
+              <span class="position-info-label">Contract</span>
+              <span class="position-info-value">${trade.optionType} $${trade.strikePrice} exp ${trade.expirationDate}</span>
+            </div>
+            <div class="position-info-row">
+              <span class="position-info-label">Position</span>
+              <span class="position-info-value">${trade.type.toUpperCase()} ${qty} contracts</span>
+            </div>
+            <div class="position-info-row">
+              <span class="position-info-label">Entry Premium</span>
+              <span class="position-info-value">$${entryPrice.toFixed(2)}</span>
+            </div>
+            <div class="position-info-row">
+              <span class="position-info-label">Current P&L</span>
+              <span class="position-info-value ${pnlClass}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>
+            </div>
+          `;
+        }
+
+        document.getElementById('closePositionInfo').innerHTML = infoHtml;
+        document.getElementById('previewRealizedPnL').textContent = '$0.00';
+        document.getElementById('previewRealizedPnL').className = 'realized-pnl-value';
+
+        document.getElementById('closeTradeModal').classList.add('active');
+      },
+
+      calculateRealizedPnL() {
+        const tradeId = document.getElementById('closeTradeId').value;
+        const trade = this.trades.find(t => t.id === tradeId);
+        if (!trade) return;
+
+        const exitPrice = parseFloat(document.getElementById('exitPrice').value) || 0;
+        let closeQty = parseInt(document.getElementById('closeQty').value);
+        
+        let realizedPnL = 0;
+
+        if (trade.assetType === 'stock') {
+          if (!closeQty) closeQty = trade.shares;
+          if (trade.type === 'long') {
+            realizedPnL = (exitPrice - trade.entryPrice) * closeQty;
+          } else {
+            realizedPnL = (trade.entryPrice - exitPrice) * closeQty;
+          }
+        } else if (trade.assetType === 'option' || trade.assetType === 'multi-leg') {
+          if (!closeQty) closeQty = trade.contracts || trade.legs?.[0]?.contracts || 0;
+          const entryPremium = trade.premium || trade.netPremium || 0;
+          
+          if (trade.type === 'short') {
+            realizedPnL = (entryPremium - exitPrice) * 100 * closeQty;
+          } else {
+            realizedPnL = (exitPrice - entryPremium) * 100 * closeQty;
+          }
+        }
+
+        const el = document.getElementById('previewRealizedPnL');
+        el.textContent = `${realizedPnL >= 0 ? '+' : ''}$${realizedPnL.toFixed(2)}`;
+        el.className = `realized-pnl-value ${realizedPnL >= 0 ? 'positive' : 'negative'}`;
+      },
+
+      closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
       },
 
       toggleOptionFields() {
@@ -900,12 +1356,165 @@
         this.saveData();
         this.renderTable();
         this.updateSummary();
-        this.closeModal();
+        this.closeModal('addTradeModal');
         
         // Clear form
         document.getElementById('tradeSymbol').value = '';
         document.getElementById('tradeQty').value = '';
         document.getElementById('tradePrice').value = '';
+      },
+
+      saveEdit() {
+        const tradeId = document.getElementById('editTradeId').value;
+        const trade = this.trades.find(t => t.id === tradeId);
+        if (!trade) return;
+
+        if (trade.assetType === 'stock') {
+          trade.shares = parseInt(document.getElementById('editQty').value);
+          trade.entryPrice = parseFloat(document.getElementById('editPrice').value);
+        } else {
+          trade.contracts = parseInt(document.getElementById('editQty').value);
+          trade.premium = parseFloat(document.getElementById('editPrice').value);
+          trade.currentPremium = parseFloat(document.getElementById('editCurrentPremium').value);
+        }
+
+        trade.notes = document.getElementById('editNotes').value;
+
+        this.saveData();
+        this.renderTable();
+        this.updateSummary();
+        this.closeModal('editTradeModal');
+      },
+
+      closeTrade() {
+        const tradeId = document.getElementById('closeTradeId').value;
+        const trade = this.trades.find(t => t.id === tradeId);
+        if (!trade) return;
+
+        const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+        const closeDate = document.getElementById('closeDate').value;
+        let closeQty = parseInt(document.getElementById('closeQty').value);
+
+        if (!exitPrice && exitPrice !== 0) {
+          alert('Please enter an exit price');
+          return;
+        }
+
+        let realizedPnL = 0;
+        let isPartialClose = false;
+
+        if (trade.assetType === 'stock') {
+          const totalShares = trade.shares;
+          if (!closeQty || closeQty >= totalShares) {
+            closeQty = totalShares;
+          } else {
+            isPartialClose = true;
+          }
+
+          if (trade.type === 'long') {
+            realizedPnL = (exitPrice - trade.entryPrice) * closeQty;
+          } else {
+            realizedPnL = (trade.entryPrice - exitPrice) * closeQty;
+          }
+
+          if (isPartialClose) {
+            // Create closed trade record
+            const closedTrade = {
+              ...trade,
+              id: Date.now().toString(),
+              status: 'closed',
+              closedShares: closeQty,
+              exitPrice: exitPrice,
+              closeDate: closeDate,
+              realizedPnL: realizedPnL
+            };
+            this.trades.push(closedTrade);
+            
+            // Update original trade
+            trade.shares = totalShares - closeQty;
+          } else {
+            trade.status = 'closed';
+            trade.exitPrice = exitPrice;
+            trade.closeDate = closeDate;
+            trade.realizedPnL = realizedPnL;
+            trade.closedShares = closeQty;
+          }
+
+        } else if (trade.assetType === 'option') {
+          const totalContracts = trade.contracts;
+          if (!closeQty || closeQty >= totalContracts) {
+            closeQty = totalContracts;
+          } else {
+            isPartialClose = true;
+          }
+
+          if (trade.type === 'short') {
+            realizedPnL = (trade.premium - exitPrice) * 100 * closeQty;
+          } else {
+            realizedPnL = (exitPrice - trade.premium) * 100 * closeQty;
+          }
+
+          if (isPartialClose) {
+            const closedTrade = {
+              ...trade,
+              id: Date.now().toString(),
+              status: 'closed',
+              closedContracts: closeQty,
+              exitPremium: exitPrice,
+              closeDate: closeDate,
+              realizedPnL: realizedPnL
+            };
+            this.trades.push(closedTrade);
+            
+            trade.contracts = totalContracts - closeQty;
+          } else {
+            trade.status = 'closed';
+            trade.exitPremium = exitPrice;
+            trade.closeDate = closeDate;
+            trade.realizedPnL = realizedPnL;
+            trade.closedContracts = closeQty;
+          }
+
+        } else if (trade.assetType === 'multi-leg') {
+          const totalContracts = trade.legs?.[0]?.contracts || 0;
+          if (!closeQty || closeQty >= totalContracts) {
+            closeQty = totalContracts;
+          } else {
+            isPartialClose = true;
+          }
+
+          if (trade.type === 'short') {
+            realizedPnL = (trade.netPremium - exitPrice) * 100 * closeQty;
+          } else {
+            realizedPnL = (exitPrice - trade.netPremium) * 100 * closeQty;
+          }
+
+          if (isPartialClose) {
+            const closedTrade = {
+              ...trade,
+              id: Date.now().toString(),
+              status: 'closed',
+              exitPremium: exitPrice,
+              closeDate: closeDate,
+              realizedPnL: realizedPnL,
+              legs: trade.legs.map(leg => ({...leg, contracts: closeQty}))
+            };
+            this.trades.push(closedTrade);
+            
+            trade.legs = trade.legs.map(leg => ({...leg, contracts: leg.contracts - closeQty}));
+          } else {
+            trade.status = 'closed';
+            trade.exitPremium = exitPrice;
+            trade.closeDate = closeDate;
+            trade.realizedPnL = realizedPnL;
+          }
+        }
+
+        this.saveData();
+        this.renderTable();
+        this.renderClosedTrades();
+        this.updateSummary();
+        this.closeModal('closeTradeModal');
       },
 
       saveData() {
@@ -929,7 +1538,6 @@
       }
     };
 
-    // Initialize on load
     document.addEventListener('DOMContentLoaded', () => app.init());
   </script>
 </body>
