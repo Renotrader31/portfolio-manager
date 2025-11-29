@@ -587,6 +587,56 @@
       color: var(--text-muted);
       text-transform: uppercase;
     }
+
+    .pnl-by-ticker-section {
+      margin-top: 32px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-header h3 {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .pnl-bar {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--bg-tertiary);
+      min-width: 100px;
+    }
+
+    .pnl-bar-positive {
+      background: var(--accent-green);
+    }
+
+    .pnl-bar-negative {
+      background: var(--accent-red);
+    }
+
+    .ticker-summary-row {
+      cursor: pointer;
+    }
+
+    .ticker-summary-row:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .total-row {
+      background: var(--bg-secondary);
+      font-weight: 600;
+    }
+
+    .total-row td {
+      border-top: 2px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -678,6 +728,30 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- P&L by Ticker Section -->
+    <div class="pnl-by-ticker-section">
+      <div class="section-header">
+        <h3>📈 P&L by Ticker</h3>
+      </div>
+      <div class="table-wrapper">
+        <table class="positions-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th class="right">Open Positions</th>
+              <th class="right">Cost Basis</th>
+              <th class="right">Market Value</th>
+              <th class="right">Unrealized P&L</th>
+              <th class="right">Realized P&L</th>
+              <th class="right">Total P&L</th>
+            </tr>
+          </thead>
+          <tbody id="pnlByTickerTable">
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Closed Trades Section -->
@@ -887,6 +961,7 @@
 
         this.renderTable();
         this.renderClosedTrades();
+        this.renderPnLByTicker();
         this.updateSummary();
       },
 
@@ -927,6 +1002,7 @@
         event.target.classList.add('active');
         this.renderTable();
         this.renderClosedTrades();
+        this.renderPnLByTicker();
         this.updateSummary();
       },
 
@@ -972,6 +1048,7 @@
         document.getElementById('refreshTime').textContent = `Last updated: ${now.toLocaleTimeString()}`;
         
         this.renderTable();
+        this.renderPnLByTicker();
         this.updateSummary();
       },
 
@@ -1054,7 +1131,8 @@
               <td class="right">
                 <div class="action-buttons">
                   <button class="btn btn-secondary btn-icon btn-sm" onclick="app.showEditModal('${trade.id}')" title="Edit">✏️</button>
-                  <button class="btn btn-danger btn-icon btn-sm" onclick="app.showCloseModal('${trade.id}')" title="Close">🏁</button>
+                  <button class="btn btn-warning btn-icon btn-sm" onclick="app.showCloseModal('${trade.id}')" title="Close">🏁</button>
+                  <button class="btn btn-danger btn-icon btn-sm" onclick="app.deleteTrade('${trade.id}')" title="Delete">🗑️</button>
                 </div>
               </td>
             </tr>
@@ -1355,6 +1433,7 @@
         this.trades.push(trade);
         this.saveData();
         this.renderTable();
+        this.renderPnLByTicker();
         this.updateSummary();
         this.closeModal('addTradeModal');
         
@@ -1382,6 +1461,7 @@
 
         this.saveData();
         this.renderTable();
+        this.renderPnLByTicker();
         this.updateSummary();
         this.closeModal('editTradeModal');
       },
@@ -1513,6 +1593,7 @@
         this.saveData();
         this.renderTable();
         this.renderClosedTrades();
+        this.renderPnLByTicker();
         this.updateSummary();
         this.closeModal('closeTradeModal');
       },
@@ -1535,6 +1616,114 @@
         a.href = url;
         a.download = `portfolio-backup-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
+      },
+
+      deleteTrade(tradeId) {
+        const trade = this.trades.find(t => t.id === tradeId);
+        if (!trade) return;
+
+        const confirmMsg = trade.assetType === 'stock' 
+          ? `Delete ${trade.symbol} (${trade.shares} shares)?`
+          : `Delete ${trade.symbol} ${trade.optionType || ''} $${trade.strikePrice || ''} (${trade.contracts || trade.legs?.[0]?.contracts} contracts)?`;
+
+        if (!confirm(confirmMsg + '\n\nThis cannot be undone.')) return;
+
+        this.trades = this.trades.filter(t => t.id !== tradeId);
+        this.saveData();
+        this.renderTable();
+        this.renderClosedTrades();
+        this.renderPnLByTicker();
+        this.updateSummary();
+      },
+
+      renderPnLByTicker() {
+        const tbody = document.getElementById('pnlByTickerTable');
+        const allTrades = this.currentFilter === 'all' 
+          ? this.trades 
+          : this.trades.filter(t => t.portfolioId === this.currentFilter);
+
+        // Group by symbol
+        const tickerData = {};
+
+        allTrades.forEach(trade => {
+          if (!tickerData[trade.symbol]) {
+            tickerData[trade.symbol] = {
+              symbol: trade.symbol,
+              openPositions: 0,
+              costBasis: 0,
+              marketValue: 0,
+              unrealizedPnL: 0,
+              realizedPnL: 0
+            };
+          }
+
+          const data = tickerData[trade.symbol];
+
+          if (trade.status === 'open') {
+            data.openPositions++;
+            const details = this.getTradeDetails(trade);
+            data.costBasis += details.costBasis || 0;
+            data.marketValue += details.marketValue || 0;
+            data.unrealizedPnL += details.pnl || 0;
+          } else if (trade.status === 'closed') {
+            data.realizedPnL += trade.realizedPnL || 0;
+          }
+        });
+
+        // Convert to array and sort by total P&L
+        const tickers = Object.values(tickerData)
+          .map(t => ({
+            ...t,
+            totalPnL: t.unrealizedPnL + t.realizedPnL
+          }))
+          .sort((a, b) => b.totalPnL - a.totalPnL);
+
+        if (tickers.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="empty-state">No positions to display.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Calculate totals
+        const totals = tickers.reduce((acc, t) => ({
+          openPositions: acc.openPositions + t.openPositions,
+          costBasis: acc.costBasis + t.costBasis,
+          marketValue: acc.marketValue + t.marketValue,
+          unrealizedPnL: acc.unrealizedPnL + t.unrealizedPnL,
+          realizedPnL: acc.realizedPnL + t.realizedPnL,
+          totalPnL: acc.totalPnL + t.totalPnL
+        }), { openPositions: 0, costBasis: 0, marketValue: 0, unrealizedPnL: 0, realizedPnL: 0, totalPnL: 0 });
+
+        tbody.innerHTML = tickers.map(ticker => {
+          const unrealizedClass = ticker.unrealizedPnL >= 0 ? 'positive' : 'negative';
+          const realizedClass = ticker.realizedPnL >= 0 ? 'positive' : 'negative';
+          const totalClass = ticker.totalPnL >= 0 ? 'positive' : 'negative';
+
+          return `
+            <tr class="ticker-summary-row">
+              <td><span class="symbol">${ticker.symbol}</span></td>
+              <td class="right mono">${ticker.openPositions}</td>
+              <td class="right mono">$${ticker.costBasis.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td class="right mono">$${ticker.marketValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td class="right mono ${unrealizedClass}">${ticker.unrealizedPnL >= 0 ? '+' : ''}$${ticker.unrealizedPnL.toFixed(2)}</td>
+              <td class="right mono ${realizedClass}">${ticker.realizedPnL >= 0 ? '+' : ''}$${ticker.realizedPnL.toFixed(2)}</td>
+              <td class="right mono ${totalClass}">${ticker.totalPnL >= 0 ? '+' : ''}$${ticker.totalPnL.toFixed(2)}</td>
+            </tr>
+          `;
+        }).join('') + `
+          <tr class="total-row">
+            <td><strong>TOTAL</strong></td>
+            <td class="right mono">${totals.openPositions}</td>
+            <td class="right mono">$${totals.costBasis.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="right mono">$${totals.marketValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td class="right mono ${totals.unrealizedPnL >= 0 ? 'positive' : 'negative'}">${totals.unrealizedPnL >= 0 ? '+' : ''}$${totals.unrealizedPnL.toFixed(2)}</td>
+            <td class="right mono ${totals.realizedPnL >= 0 ? 'positive' : 'negative'}">${totals.realizedPnL >= 0 ? '+' : ''}$${totals.realizedPnL.toFixed(2)}</td>
+            <td class="right mono ${totals.totalPnL >= 0 ? 'positive' : 'negative'}">${totals.totalPnL >= 0 ? '+' : ''}$${totals.totalPnL.toFixed(2)}</td>
+          </tr>
+        `;
       }
     };
 
